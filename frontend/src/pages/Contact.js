@@ -19,7 +19,7 @@ function Contact() {
     e.preventDefault();
     setStatus("Sending...");
     try {
-      await axios.post("http://localhost:5000/api/contact", formData);
+  await axios.post((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/contact', formData);
       setStatus("Message sent successfully!");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (err) {

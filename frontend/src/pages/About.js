@@ -11,7 +11,7 @@ function About() {
 
   useEffect(() => {
     // Fetch team members
-    axios.get("http://localhost:5000/api/team")
+  axios.get((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/team')
       .then(res => {
         setTeam(res.data);
         setLoading(false);
@@ -23,7 +23,7 @@ function About() {
     
     // Fetch about data with debugging
     console.log("Fetching about data...");
-    axios.get("http://localhost:5000/api/about")
+  axios.get((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/about')
       .then(res => {
         console.log("About API Response:", res.data);
         console.log("About data keys:", Object.keys(res.data));

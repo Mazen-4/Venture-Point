@@ -31,7 +31,7 @@ export default function Navbar() {
           <div className="flex-shrink-0 flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2 group">
               <img
-                src="/images/VPED-logo.png"
+                src={(process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com") + '/images/VPED-logo.png'}
                 alt="VenturePoint Logo"
                 className="h-10 w-auto object-contain animate-spin-slow group-hover:scale-110 transition-transform duration-500"
                 style={{ maxHeight: '40px' }}

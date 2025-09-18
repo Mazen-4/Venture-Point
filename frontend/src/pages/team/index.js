@@ -11,7 +11,7 @@ export default function TeamMemberPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/team")
+  fetch((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/team')
       .then((res) => res.json())
       .then((data) => {
         console.log("Fetched team data:", data);

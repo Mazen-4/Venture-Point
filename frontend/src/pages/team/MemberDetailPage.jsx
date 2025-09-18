@@ -11,7 +11,7 @@ export default function TeamMemberPage() {
   useEffect(() => {
     if (id) {
       axios
-        .get(`http://localhost:5000/api/team/${id}`)
+  .get(`${process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com'}/api/team/${id}`)
         .then((res) => {
           setMember(res.data);
           setLoading(false);

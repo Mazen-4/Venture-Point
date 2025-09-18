@@ -9,7 +9,7 @@ function Projects() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/projects")
+  axios.get((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/projects')
       .then(res => {
         setProjects(res.data);
         setLoading(false);

@@ -244,7 +244,7 @@ export default function AdminEvents() {
 		const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
 		
 		// Construct full URL - using images path as per your backend fix
-		const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+	const baseUrl = process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com';
 		return `${baseUrl}/${cleanPath}?t=${Date.now()}`;
 	};
 

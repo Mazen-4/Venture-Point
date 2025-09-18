@@ -12,7 +12,7 @@ export default function TeamMemberPage() {
     console.log("ID from URL:", id); // Debug: Check what ID we're getting
     
     if (id) {
-      axios.get(`http://localhost:5000/api/team/${id}`)
+  axios.get(`${process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com'}/api/team/${id}`)
         .then(res => {
           console.log("API Response:", res.data); // Debug: Check what data we're getting
           setMember(res.data);

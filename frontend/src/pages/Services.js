@@ -3,15 +3,19 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
+// https://venturepoint-backend.onrender.com
+// http://localhost:5000
+
 function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/services")
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com";
+    axios.get(`${API_BASE_URL}/api/services`)
       .then(res => {
-        setServices(res.data);
+      setServices(Array.isArray(res.data) ? res.data : res.data.data || []);
         setLoading(false);
       })
       .catch(err => {

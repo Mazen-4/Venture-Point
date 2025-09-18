@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaUser, FaLock, FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 // Import your logo if available
-const logo = process.env.PUBLIC_URL + '/images/VPED-logo.png';
+const logo = (process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com") + '/images/VPED-logo.png';
 
 
 export default function Login() {
@@ -27,7 +27,7 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+        const response = await fetch((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,6 +44,7 @@ export default function Login() {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

@@ -46,18 +46,22 @@ const upload = multer({
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "venturepoint_db"
+const pool = mysql.createPool({
+    host: "148.72.3.185",
+    user: "vp_DBAdmin",
+    password: "Vp_ed#2025%1624*P@s$",
+    database: "venturepoint_db",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
-db.connect(err => {
+pool.getConnection((err, connection) => {
     if (err) {
-        console.error("❌ DB connection failed: ", err);
+        console.error("❌ DB pool connection failed: ", err);
         return;
     }
-    console.log("✅ Connected to MySQL database");
+    console.log("✅ Connected to MySQL database (pool)");
+    connection.release();
 });
 
 // ================= OPTIONAL ENHANCEMENTS =================
@@ -118,7 +122,7 @@ app.post("/api/events", authenticateToken, upload.single('image'), (req, res) =>
         const query = `INSERT INTO events (${fields.join(', ')}) VALUES (${placeholders})`;
         console.log('Insert Query:', query);
 
-        db.query(query, Object.values(insertData), (err, result) => {
+        pool.query(query, Object.values(insertData), (err, result) => {
             if (err) {
                 console.error('Create event error:', err);
                 return res.status(500).json({
@@ -174,7 +178,7 @@ app.put("/api/events/:id", authenticateToken, upload.single('image'), (req, res)
         values.push(id);
         console.log('Update Query:', query);
 
-        db.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
             if (err) {
                 console.error('Update event error:', err);
                 return res.status(500).json({
@@ -198,7 +202,7 @@ app.put("/api/events/:id", authenticateToken, upload.single('image'), (req, res)
                 });
             } else {
                 // If no new image, fetch the current image_url from DB
-                db.query('SELECT image_url FROM events WHERE id = ?', [id], (err2, rows) => {
+                pool.query('SELECT image_url FROM events WHERE id = ?', [id], (err2, rows) => {
                     let imageUrl = null;
                     if (!err2 && rows && rows.length > 0) {
                         imageUrl = rows[0].image_url;
@@ -296,7 +300,7 @@ app.get('/api/health', (req, res) => {
 // ================= PUBLIC ROUTES (NO AUTH REQUIRED) =================
 // Get about page data (single row)
 app.get("/api/about", (req, res) => {
-    db.query("SELECT * FROM about LIMIT 1", (err, results) => {
+    pool.query("SELECT * FROM about LIMIT 1", (err, results) => {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).send(err);
@@ -314,7 +318,7 @@ app.get("/api/about", (req, res) => {
 
 // Get all services (public)
 app.get("/api/services", (req, res) => {
-    db.query("SELECT * FROM services", (err, results) => {
+    pool.query("SELECT * FROM services", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -322,7 +326,7 @@ app.get("/api/services", (req, res) => {
 
 // Get all team members (public)
 app.get("/api/team", (req, res) => {
-    db.query("SELECT * FROM team_members", (err, results) => {
+    pool.query("SELECT * FROM team_members", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -330,7 +334,7 @@ app.get("/api/team", (req, res) => {
 
 // Get all projects (public)
 app.get("/api/projects", (req, res) => {
-    db.query("SELECT * FROM projects", (err, results) => {
+    pool.query("SELECT * FROM projects", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -338,7 +342,7 @@ app.get("/api/projects", (req, res) => {
 
 // Get all articles (public)
 app.get("/api/articles", (req, res) => {
-    db.query("SELECT * FROM articles", (err, results) => {
+    pool.query("SELECT * FROM articles", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -346,7 +350,7 @@ app.get("/api/articles", (req, res) => {
 
 // Get all events (public)
 app.get("/api/events", (req, res) => {
-    db.query("SELECT * FROM events", (err, results) => {
+    pool.query("SELECT * FROM events", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -354,7 +358,7 @@ app.get("/api/events", (req, res) => {
 
 // Get all job postings (public)
 app.get("/api/jobs", (req, res) => {
-    db.query("SELECT * FROM job_postings", (err, results) => {
+    pool.query("SELECT * FROM job_postings", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -363,7 +367,7 @@ app.get("/api/jobs", (req, res) => {
 // Save a new contact message (public)
 app.post("/api/contact", (req, res) => {
     const { name, email, subject, message } = req.body;
-    db.query(
+    pool.query(
         "INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)",
         [name, email, subject, message],
         (err, result) => {
@@ -375,7 +379,7 @@ app.post("/api/contact", (req, res) => {
 
 // Mark contact message as read
 app.post("/api/contact/:id/read", authenticateToken, (req, res) => {
-    db.query("UPDATE contact_messages SET read = 1 WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("UPDATE contact_messages SET read = 1 WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -383,7 +387,7 @@ app.post("/api/contact/:id/read", authenticateToken, (req, res) => {
 
 // Mark contact message as unread
 app.post("/api/contact/:id/unread", authenticateToken, (req, res) => {
-    db.query("UPDATE contact_messages SET read = 0 WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("UPDATE contact_messages SET read = 0 WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -397,12 +401,12 @@ app.post("/api/admin/register", (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: "Username and password required" });
     
-    db.query("SELECT COUNT(*) AS count FROM admins", (err, results) => {
+    pool.query("SELECT COUNT(*) AS count FROM admins", (err, results) => {
         if (err) return res.status(500).send(err);
         if (results[0].count > 0) return res.status(403).json({ error: "Admin registration disabled" });
         
         const hash = bcrypt.hashSync(password, 10);
-        db.query("INSERT INTO admins (username, password, role) VALUES (?, ?, 'superadmin')", [username, hash], (err, result) => {
+    pool.query("INSERT INTO admins (username, password, role) VALUES (?, ?, 'superadmin')", [username, hash], (err, result) => {
             if (err) return res.status(500).send(err);
             res.json({ success: true, id: result.insertId });
         });
@@ -414,7 +418,7 @@ app.post("/api/admin/login", (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: "Username and password required" });
 
-    db.query("SELECT * FROM admins WHERE username = ?", [username], (err, results) => {
+    pool.query("SELECT * FROM admins WHERE username = ?", [username], (err, results) => {
         if (err) {
             console.error("DB error during admin login:", err);
             return res.status(500).json({ error: "Database error" });
@@ -445,7 +449,7 @@ app.post("/api/admin/reset-password", authenticateToken, requireRole("superadmin
     if (!username || !newPassword) return res.status(400).json({ error: "Username and new password required" });
     
     const hash = bcrypt.hashSync(newPassword, 10);
-    db.query("UPDATE admins SET password = ? WHERE username = ?", [hash, username], (err, result) => {
+    pool.query("UPDATE admins SET password = ? WHERE username = ?", [hash, username], (err, result) => {
         if (err) return res.status(500).send(err);
         if (result.affectedRows === 0) return res.status(404).json({ error: "Admin not found" });
         res.json({ success: true });
@@ -454,7 +458,7 @@ app.post("/api/admin/reset-password", authenticateToken, requireRole("superadmin
 
 // List all admins (superadmin only)
 app.get("/api/admins", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("SELECT id, username, role FROM admins", (err, results) => {
+    pool.query("SELECT id, username, role FROM admins", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
@@ -466,7 +470,7 @@ app.post("/api/admins", authenticateToken, requireRole("superadmin"), (req, res)
     if (!username || !password || !role) return res.status(400).json({ error: "Username, password, and role required" });
     
     const hash = bcrypt.hashSync(password, 10);
-    db.query("INSERT INTO admins (username, password, role) VALUES (?, ?, ?)", [username, hash, role], (err, result) => {
+    pool.query("INSERT INTO admins (username, password, role) VALUES (?, ?, ?)", [username, hash, role], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true, id: result.insertId });
     });
@@ -485,7 +489,7 @@ app.put("/api/admins/:id", authenticateToken, requireRole("superadmin"), (req, r
     if (updateFields.length === 0) return res.status(400).json({ error: "No fields to update" });
     
     params.push(req.params.id);
-    db.query(`UPDATE admins SET ${updateFields.join(", ")} WHERE id = ?`, params, (err, result) => {
+    pool.query(`UPDATE admins SET ${updateFields.join(", ")} WHERE id = ?`, params, (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -493,7 +497,7 @@ app.put("/api/admins/:id", authenticateToken, requireRole("superadmin"), (req, r
 
 // Delete an admin (superadmin only)
 app.delete("/api/admins/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM admins WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM admins WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -505,7 +509,7 @@ app.use('/api', analyticsRouter);
 
 // SERVICES CRUD
 app.get("/api/services/:id", (req, res) => {
-    db.query("SELECT * FROM services WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM services WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -513,21 +517,21 @@ app.get("/api/services/:id", (req, res) => {
 });
 
 app.post("/api/services", authenticateToken, (req, res) => {
-    db.query("INSERT INTO services SET ?", req.body, (err, result) => {
+    pool.query("INSERT INTO services SET ?", req.body, (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true, id: result.insertId });
     });
 });
 
 app.put("/api/services/:id", authenticateToken, (req, res) => {
-    db.query("UPDATE services SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
+    pool.query("UPDATE services SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
 });
 
 app.delete("/api/services/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM services WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM services WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -535,7 +539,7 @@ app.delete("/api/services/:id", authenticateToken, requireRole("superadmin"), (r
 
 // TEAM MEMBERS CRUD
 app.get("/api/team/:id", (req, res) => {
-    db.query("SELECT * FROM team_members WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM team_members WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -562,7 +566,7 @@ app.post("/api/team", upload.any(), (req, res) => {
         const fields = Object.keys(insertData);
         const placeholders = fields.map(() => '?').join(', ');
         const query = `INSERT INTO team_members (${fields.join(', ')}) VALUES (${placeholders})`;
-        db.query(query, Object.values(insertData), (err, result) => {
+        pool.query(query, Object.values(insertData), (err, result) => {
             if (err) {
                 console.error('Add member error:', err);
                 return res.status(500).json({ success: false, message: 'Failed to add member', error: err.message });
@@ -593,7 +597,7 @@ app.put('/api/team/:id', upload.any(), (req, res) => {
         return res.status(400).json({ success: false, message: 'Name, role, and bio are required.' });
     }
     // If no new image, keep the old photo_url
-    db.query('SELECT photo_url FROM team_members WHERE id = ?', [memberId], (err, results) => {
+    pool.query('SELECT photo_url FROM team_members WHERE id = ?', [memberId], (err, results) => {
         if (err) {
             console.error('Fetch old photo_url error:', err);
             return res.status(500).json({ success: false, message: 'Failed to update member', error: err.message });
@@ -611,7 +615,7 @@ app.put('/api/team/:id', upload.any(), (req, res) => {
         const setClause = fields.map(f => `${f} = ?`).join(', ');
         const query = `UPDATE team_members SET ${setClause} WHERE id = ?`;
         values.push(memberId);
-        db.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
             if (err) {
                 console.error('Update member error:', err);
                 return res.status(500).json({ success: false, message: 'Failed to update member', error: err.message });
@@ -623,7 +627,7 @@ app.put('/api/team/:id', upload.any(), (req, res) => {
 
 // Delete a team member (superadmin only)
 app.delete("/api/team/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM team_members WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM team_members WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -631,7 +635,7 @@ app.delete("/api/team/:id", authenticateToken, requireRole("superadmin"), (req, 
 
 // PROJECTS CRUD
 app.get("/api/projects/:id", (req, res) => {
-    db.query("SELECT * FROM projects WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM projects WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -658,7 +662,7 @@ app.post("/api/projects", authenticateToken, upload.any(), (req, res) => {
         const query = `INSERT INTO projects (${fields.join(', ')}) VALUES (${placeholders})`;
         console.log('Insert query:', query);
         console.log('Insert values:', Object.values(insertData));
-        db.query(query, Object.values(insertData), (err, result) => {
+        pool.query(query, Object.values(insertData), (err, result) => {
             if (err) {
                 console.error('Add project error:', err);
                 return res.status(500).json({ success: false, message: 'Failed to add project', error: err.message });
@@ -689,7 +693,7 @@ app.put("/api/projects/:id", authenticateToken, upload.any(), (req, res) => {
     // Parse fields from req.body
     const { title, description, ...otherFields } = req.body;
     // Get old image_url if no new image is uploaded
-    db.query('SELECT image_url FROM projects WHERE id = ?', [projectId], (err, results) => {
+    pool.query('SELECT image_url FROM projects WHERE id = ?', [projectId], (err, results) => {
         if (err) {
             console.error('Fetch old image_url error:', err);
             return res.status(500).json({ success: false, message: 'Failed to update project', error: err.message });
@@ -711,7 +715,7 @@ app.put("/api/projects/:id", authenticateToken, upload.any(), (req, res) => {
         values.push(projectId);
         console.log('Update query:', query);
         console.log('Update values:', values);
-        db.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
             if (err) {
                 console.error('Update project error:', err);
                 return res.status(500).json({ success: false, message: 'Failed to update project', error: err.message });
@@ -727,7 +731,7 @@ app.delete("/api/projects/:id", authenticateToken, requireRole("superadmin"), (r
     console.log("DELETE /api/projects/:id called. id:", projectId);
     console.log("req.user:", req.user);
 
-    db.query("DELETE FROM projects WHERE id = ?", [projectId], (err, result) => {
+    pool.query("DELETE FROM projects WHERE id = ?", [projectId], (err, result) => {
         if (err) {
             console.error("SQL error during DELETE projects:", err);
             return res.status(500).json({ error: "Database error" });
@@ -741,7 +745,7 @@ app.delete("/api/projects/:id", authenticateToken, requireRole("superadmin"), (r
 
 // ARTICLES CRUD
 app.get("/api/articles/:id", (req, res) => {
-    db.query("SELECT * FROM articles WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM articles WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -749,21 +753,21 @@ app.get("/api/articles/:id", (req, res) => {
 });
 
 app.post("/api/articles", authenticateToken, (req, res) => {
-    db.query("INSERT INTO articles SET ?", req.body, (err, result) => {
+    pool.query("INSERT INTO articles SET ?", req.body, (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true, id: result.insertId });
     });
 });
 
 app.put("/api/articles/:id", authenticateToken, (req, res) => {
-    db.query("UPDATE articles SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
+    pool.query("UPDATE articles SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
 });
 
 app.delete("/api/articles/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM articles WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM articles WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -771,7 +775,7 @@ app.delete("/api/articles/:id", authenticateToken, requireRole("superadmin"), (r
 
 // EVENTS CRUD
 app.get("/api/events/:id", (req, res) => {
-    db.query("SELECT * FROM events WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM events WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -779,7 +783,7 @@ app.get("/api/events/:id", (req, res) => {
 });
 
 app.post("/api/events", authenticateToken, (req, res) => {
-    db.query("INSERT INTO events SET ?", req.body, (err, result) => {
+    pool.query("INSERT INTO events SET ?", req.body, (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true, id: result.insertId });
     });
@@ -795,7 +799,7 @@ app.put("/api/events/:id", authenticateToken, upload.single('image'), (req, res)
         const eventId = req.params.id;
         const { title, description, event_date } = req.body;
         // Only update fields that exist in the events table
-        db.query('SELECT image_url FROM events WHERE id = ?', [eventId], (err, results) => {
+        pool.query('SELECT image_url FROM events WHERE id = ?', [eventId], (err, results) => {
             if (err) {
                 console.error('Fetch old image_url error:', err);
                 return res.status(500).json({ success: false, message: 'Failed to update event', error: err.message });
@@ -819,7 +823,7 @@ app.put("/api/events/:id", authenticateToken, upload.single('image'), (req, res)
             values.push(eventId);
             console.log('Update Query:', query);
             console.log('Update Values:', values);
-            db.query(query, values, (err, result) => {
+            pool.query(query, values, (err, result) => {
                 if (err) {
                     console.error('Update event error:', err);
                     return res.status(500).json({ success: false, message: 'Failed to update event', error: err.message });
@@ -848,7 +852,7 @@ app.use((error, req, res, next) => {
 });
 
 app.delete("/api/events/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM events WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM events WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -856,7 +860,7 @@ app.delete("/api/events/:id", authenticateToken, requireRole("superadmin"), (req
 
 // JOB POSTINGS CRUD
 app.get("/api/jobs/:id", (req, res) => {
-    db.query("SELECT * FROM job_postings WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM job_postings WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -864,21 +868,21 @@ app.get("/api/jobs/:id", (req, res) => {
 });
 
 app.post("/api/jobs", authenticateToken, (req, res) => {
-    db.query("INSERT INTO job_postings SET ?", req.body, (err, result) => {
+    pool.query("INSERT INTO job_postings SET ?", req.body, (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true, id: result.insertId });
     });
 });
 
 app.put("/api/jobs/:id", authenticateToken, (req, res) => {
-    db.query("UPDATE job_postings SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
+    pool.query("UPDATE job_postings SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
 });
 
 app.delete("/api/jobs/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM job_postings WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM job_postings WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
@@ -886,14 +890,14 @@ app.delete("/api/jobs/:id", authenticateToken, requireRole("superadmin"), (req, 
 
 // CONTACT MESSAGES CRUD (Admin access)
 app.get("/api/contact", authenticateToken, (req, res) => {
-    db.query("SELECT * FROM contact_messages", (err, results) => {
+    pool.query("SELECT * FROM contact_messages", (err, results) => {
         if (err) return res.status(500).send(err);
         res.json(results);
     });
 });
 
 app.get("/api/contact/:id", authenticateToken, (req, res) => {
-    db.query("SELECT * FROM contact_messages WHERE id = ?", [req.params.id], (err, results) => {
+    pool.query("SELECT * FROM contact_messages WHERE id = ?", [req.params.id], (err, results) => {
         if (err) return res.status(500).send(err);
         if (results.length === 0) return res.status(404).json({ error: "Not found" });
         res.json(results[0]);
@@ -901,14 +905,14 @@ app.get("/api/contact/:id", authenticateToken, (req, res) => {
 });
 
 app.put("/api/contact/:id", authenticateToken, (req, res) => {
-    db.query("UPDATE contact_messages SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
+    pool.query("UPDATE contact_messages SET ? WHERE id = ?", [req.body, req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });
 });
 
 app.delete("/api/contact/:id", authenticateToken, requireRole("superadmin"), (req, res) => {
-    db.query("DELETE FROM contact_messages WHERE id = ?", [req.params.id], (err, result) => {
+    pool.query("DELETE FROM contact_messages WHERE id = ?", [req.params.id], (err, result) => {
         if (err) return res.status(500).send(err);
         res.json({ success: true });
     });

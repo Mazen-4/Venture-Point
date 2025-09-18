@@ -10,9 +10,9 @@ import axios from "axios";
 // RotatingImages component (top-level, outside Home)
 function RotatingImages() {
   const images = [
-    "/images/RI1.jpg",
-    "/images/RI2.jpg",
-    "/images/RI3.jpg",
+  `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/RI1.jpg`,
+  `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/RI2.jpg`,
+  `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/RI3.jpg`,
   ];
   const [index, setIndex] = React.useState(0);
   // For fade-in on mount/refresh
@@ -88,7 +88,7 @@ function Home() {
   
   useEffect(() => {
     const fetchData = async () => {
-      const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const baseUrl = process.env.REACT_APP_API_BASE_URL || "https://venturepoint-backend.onrender.com";
       
       try {
         const [servicesRes, projectsRes, articlesRes, eventsRes] = await Promise.allSettled([
@@ -99,22 +99,26 @@ function Home() {
         ]);
 
         if (servicesRes.status === 'fulfilled') {
-          setServices(servicesRes.value.data.slice(0, 3));
+          const arr = Array.isArray(servicesRes.value.data) ? servicesRes.value.data : servicesRes.value.data.data || [];
+          setServices(arr.slice(0, 3));
         }
         setLoading(l => ({ ...l, services: false }));
 
         if (projectsRes.status === 'fulfilled') {
-          setProjects(projectsRes.value.data.slice(0, 3));
+          const arr = Array.isArray(projectsRes.value.data) ? projectsRes.value.data : projectsRes.value.data.data || [];
+          setProjects(arr.slice(0, 3));
         }
         setLoading(l => ({ ...l, projects: false }));
 
         if (articlesRes.status === 'fulfilled') {
-          setArticles(articlesRes.value.data.slice(0, 3));
+          const arr = Array.isArray(articlesRes.value.data) ? articlesRes.value.data : articlesRes.value.data.data || [];
+          setArticles(arr.slice(0, 3));
         }
         setLoading(l => ({ ...l, articles: false }));
 
         if (eventsRes.status === 'fulfilled') {
-          setEvents(eventsRes.value.data.slice(0, 3));
+          const arr = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : eventsRes.value.data.data || [];
+          setEvents(arr.slice(0, 3));
         }
         setLoading(l => ({ ...l, events: false }));
       } catch (error) {
@@ -196,7 +200,7 @@ function Home() {
         <motion.section
           className="relative w-full min-h-[85vh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden rounded-[1.5rem] sm:rounded-[1rem] shadow-xl"
           style={{
-            backgroundImage: "url('/images/HeroImage.jpg')",
+            backgroundImage: `url('${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/HeroImage.jpg')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",

@@ -317,8 +317,8 @@ export default function AdminMembers() {
                     <img
                       src={
                         editForm.photo_url.startsWith('/images/')
-                          ? `http://localhost:5000${editForm.photo_url}`
-                          : `http://localhost:5000/images/${editForm.photo_url.replace(/^.*[\\/]/, '')}`
+                          ? `${process.env.REACT_APP_API_BASE_URL || "https://venturepoint-backend.onrender.com"}${editForm.photo_url}`
+                          : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${editForm.photo_url.replace(/^.*[\\/]/, '')}`
                       }
                       alt="Current"
                       className="h-12 w-12 object-cover rounded-full border"
@@ -395,8 +395,8 @@ export default function AdminMembers() {
                         <img
                           src={
                             member.photo_url.startsWith('/images/')
-                              ? `http://localhost:5000${member.photo_url}`
-                              : `http://localhost:5000/images/${member.photo_url.replace(/^.*[\\/]/, '')}`
+                              ? `${process.env.REACT_APP_API_BASE_URL || "https://venturepoint-backend.onrender.com"}${member.photo_url}`
+                              : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${member.photo_url.replace(/^.*[\\/]/, '')}`
                           }
                           alt={member.name}
                           className="h-12 w-12 object-cover rounded-full border"

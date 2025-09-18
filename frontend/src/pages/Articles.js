@@ -9,7 +9,7 @@ function Articles() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/articles")
+  axios.get((process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api/articles')
       .then(res => {
         setArticles(res.data);
         setLoading(false);

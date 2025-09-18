@@ -467,7 +467,7 @@ export default function AdminProjects() {
                 {editForm.image_url && (
                   <div className="mt-2">
                     <img
-                      src={editForm.image_url.startsWith('http') ? editForm.image_url : `http://localhost:5000/images/${editForm.image_url.replace(/^.*[\\/]/, '')}`}
+                      src={editForm.image_url.startsWith('http') ? editForm.image_url : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${editForm.image_url.replace(/^.*[\\/]/, '')}`}
                       alt="Current"
                       className="h-12 w-12 object-cover rounded border"
                     />
