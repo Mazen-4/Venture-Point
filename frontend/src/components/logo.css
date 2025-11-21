@@ -1,0 +1,76 @@
+/* Wrapper provides perspective and rim-light pseudo-element */
+.logo-wrapper {
+  position: relative;
+  display: inline-block;
+  perspective: 900px; /* creates depth for child transforms */
+}
+
+.logo-wrapper {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Base logo: multiple stacked drop-shadows to simulate extrusion */
+.logo {
+  display: block;
+  transform-origin: center;
+  transition: transform 0.35s cubic-bezier(.2,.9,.2,1), filter 0.35s ease, box-shadow 0.35s ease;
+  /* stacked subtle shadows to emulate layered extrusion */
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.06))
+          drop-shadow(0 2px 0 rgba(0,0,0,0.07))
+          drop-shadow(0 3px 1px rgba(0,0,0,0.08))
+          drop-shadow(0 5px 4px rgba(0,0,0,0.09))
+          drop-shadow(0 8px 8px rgba(0,0,0,0.12));
+  will-change: transform, filter;
+  backface-visibility: hidden;
+}
+
+/* Rim-light (soft highlight) to simulate light hitting the top-left edge */
+.logo-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  background: radial-gradient(120% 80% at 20% 10%, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 25%, transparent 40%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+/* Ground shadow element (inserted in DOM) */
+.logo-shadow {
+  width: 80%;
+  height: 10px;
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.5), rgba(0,0,0,0.08));
+  filter: blur(6px);
+  opacity: 0.9;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+/* Hover state: lift, tilt and deepen shadows for stronger 3D illusion */
+.logo-wrapper:hover .logo,
+.logo-wrapper:focus .logo {
+  transform: translate3d(0,-10px,18px) rotateX(6deg) scale(1.03);
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18))
+          drop-shadow(0 10px 14px rgba(0,0,0,0.16))
+          drop-shadow(0 18px 20px rgba(0,0,0,0.14));
+}
+
+.logo-wrapper:hover::after,
+.logo-wrapper:focus::after {
+  opacity: 1;
+}
+
+/* Make effect subtle on very small screens */
+@media (max-width: 640px) {
+  .logo-wrapper:hover .logo {
+    transform: translate3d(0,-6px,8px) scale(1.01);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+  }
+}
