@@ -1,7 +1,10 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import { authAPI, serviceAPI } from '../utils/authUtils';
 import { useNavigate } from 'react-router-dom';
+import SafeRichText from '../components/SafeRichText';
+
+const TINYMCE_API_KEY = process.env.REACT_APP_TINYMCE_API_KEY; // Secure the API key
 
 export default function AdminServices() {
   // =======================
@@ -154,16 +157,16 @@ export default function AdminServices() {
   // Render
   // =======================
   return (
-    <div className="p-2 sm:p-4 md:p-8 w-full max-w-screen-2xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Manage Services</h2>
-        <div className="flex items-center gap-2 sm:gap-4">
+    <div className="p-2 sm:p-4 md:p-8 w-full max-w-screen-2xl mx-auto flex flex-col items-center justify-center">
+        <div className="w-full flex flex-col items-center sm:items-start gap-4 sm:flex-row sm:justify-between mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-black mb-2 text-center sm:text-left">Services Management</h2>
+          <div className="flex items-center gap-2 sm:gap-4 justify-center sm:justify-end">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${isSuperAdmin ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
             {isSuperAdmin ? 'Super Admin' : 'Admin'}
           </span>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200"
           >
             Logout
           </button>
@@ -183,15 +186,14 @@ export default function AdminServices() {
       )}
 
       <button
-        className="mb-6 px-6 py-3 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 font-medium"
+        className="mb-6 px-6 py-3 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-200 border border-blue-700 font-medium"
         onClick={() => setShowAddModal(true)}
       >
         + Add New Service
       </button>
 
-      {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ${!showAddModal ? 'hidden' : ''}`}>
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Add New Service</h3>
             <form onSubmit={handleAddSubmit}>
               <div className="mb-4">
@@ -207,13 +209,20 @@ export default function AdminServices() {
               </div>
               <div className="mb-4">
                 <label className="block mb-2 font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={addForm.description}
-                  onChange={handleAddInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  required
+                  onEditorChange={val => setAddForm(f => ({ ...f, description: val }))}
+                  init={{
+                    height: 450,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               {addError && (
@@ -224,7 +233,7 @@ export default function AdminServices() {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed"
+                  className={`px-3 py-1 rounded-xl ${addLoading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}
                   onClick={() => {
                     setShowAddModal(false);
                     setAddError(null);
@@ -235,7 +244,7 @@ export default function AdminServices() {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700"
+                  className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-200 border border-blue-700"
                   style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
                   disabled={addLoading}
                 >
@@ -245,11 +254,10 @@ export default function AdminServices() {
             </form>
           </div>
         </div>
-      )}
+      
 
-      {showEditModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ${!showEditModal ? 'hidden' : ''}`}>
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Edit Service</h3>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
@@ -265,13 +273,20 @@ export default function AdminServices() {
               </div>
               <div className="mb-4">
                 <label className="block mb-2 font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={editForm.description}
-                  onChange={handleEditInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  required
+                  onEditorChange={val => setEditForm(f => ({ ...f, description: val }))}
+                  init={{
+                    height: 450,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               {editError && (
@@ -282,7 +297,7 @@ export default function AdminServices() {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed"
+                  className={`px-3 py-1 rounded-xl ${editLoading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}
                   onClick={() => {
                     setShowEditModal(false);
                     setEditError(null);
@@ -293,7 +308,7 @@ export default function AdminServices() {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 bg-green-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-green-700"
+                  className="px-3 py-1 bg-green-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-200 border border-green-700"
                   style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
                   disabled={editLoading}
                 >
@@ -303,7 +318,7 @@ export default function AdminServices() {
             </form>
           </div>
         </div>
-      )}
+      
 
       {loading && (
         <div className="flex items-center justify-center py-12">
@@ -313,10 +328,9 @@ export default function AdminServices() {
 
       {!loading && (
         <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full">
-          <table className="min-w-full text-base md:text-sm lg:text-base xl:text-lg">
+          <table className="min-w-full text-base md:text-sm lg:text-base xl:text-lg rounded-2xl overflow-hidden">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">ID</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Title</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Description</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Actions</th>
@@ -325,22 +339,25 @@ export default function AdminServices() {
             <tbody className="divide-y divide-blue-100">
               {services.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="py-8 px-4 text-center text-gray-500">
+                  <td colSpan="3" className="py-8 px-4 text-center text-gray-500">
                     <div className="text-lg">No services found</div>
                     <div className="text-sm mt-1">Add your first service to get started!</div>
                   </td>
                 </tr>
               ) : (
                 services.map((service) => (
-                  <tr key={service.id} className="hover:bg-blue-50 transition-colors">
-                    <td className="py-4 px-4 font-medium text-gray-900">{service.id}</td>
-                    <td className="py-4 px-4 font-medium text-gray-900">{service.title}</td>
-                    <td className="py-4 px-4 max-w-xs truncate whitespace-pre-line break-words" title={service.description}>{service.description}</td>
+                  <tr key={service.id} className="hover:bg-blue-50 transition-colors duration-200">
+                    <td className="py-4 px-4 font-medium text-gray-900">
+                      {service.title && service.title.length > 50 ? service.title.slice(0, 50) + '…' : service.title}
+                    </td>
+                    <td className="py-4 px-4 max-w-xs truncate whitespace-pre-line break-words" title={service.description}>
+                      <SafeRichText content={service.description && service.description.length > 50 ? service.description.slice(0, 50) + '…' : service.description} />
+                    </td>
                     <td className="py-4 px-4">
                       <div className="flex flex-col gap-2 items-stretch justify-center">
                         <button
                           onClick={() => handleEditClick(service)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 text-base md:text-sm lg:text-base xl:text-lg"
+                          className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-200 border border-blue-700 text-base md:text-sm lg:text-base xl:text-lg"
                           style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
                         >
                           Edit
@@ -349,7 +366,7 @@ export default function AdminServices() {
                           <button
                             onClick={() => handleDeleteService(service.id, service.title)}
                             disabled={deleteLoading === service.id}
-                            className="px-3 py-1 bg-red-600 text-white rounded-xl hover:scale-105 shadow-lg disabled:opacity-50 transition-all duration-300 border border-red-700 text-base md:text-sm lg:text-base xl:text-lg"
+                            className="px-3 py-1 bg-red-600 text-white rounded-xl hover:scale-105 shadow-lg disabled:opacity-50 transition-all duration-200 border border-red-700 text-base md:text-sm lg:text-base xl:text-lg"
                             style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
                           >
                             {deleteLoading === service.id ? 'Deleting...' : 'Delete'}

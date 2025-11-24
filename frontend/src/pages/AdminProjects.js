@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { authAPI, projectAPI } from '../utils/authUtils';
 import { useNavigate } from 'react-router-dom';
+import { Editor } from '@tinymce/tinymce-react';
+import SafeRichText from '../components/SafeRichText';
+const API_BASE = process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com';
+const TINYMCE_API_KEY = process.env.REACT_APP_TINYMCE_API_KEY; // Secure the API key
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
@@ -60,7 +64,9 @@ export default function AdminProjects() {
     setError(null);
     try {
       const response = await projectAPI.getProjects();
-      setProjects(response.data);
+      const data = response.data || [];
+      const withImages = await preloadProjectImages(data);
+      setProjects(withImages);
     } catch (err) {
       console.error('Error fetching projects:', err);
       if (err.response?.status === 401) {
@@ -75,10 +81,45 @@ export default function AdminProjects() {
     }
   }, [navigate]);
 
+  const preloadProjectImages = async (projectsList) => {
+    const updated = await Promise.all(projectsList.map(async (p) => {
+      try {
+        if (p.image_url && (p.image_url.startsWith('/api/') || p.image_url.startsWith(API_BASE + '/api/'))) {
+          const url = p.image_url.startsWith('/api/') ? (API_BASE + p.image_url) : p.image_url;
+          const r = await fetch(url);
+          if (!r.ok) return p;
+          const blob = await r.blob();
+          const obj = URL.createObjectURL(blob);
+          return { ...p, _imageSrc: obj };
+        }
+      } catch (err) {
+        // ignore
+      }
+      return p;
+    }));
+    return updated;
+  };
+
   useEffect(() => {
     checkUserRole();
     fetchProjects();
   }, [fetchProjects]);
+
+  const resolveProjectImageUrl = (project) => {
+    if (!project || !project.image_url) return null;
+    // prefer preloaded _imageSrc
+    if (project._imageSrc) return project._imageSrc;
+    const u = project.image_url;
+    if (u.startsWith('blob:') || u.startsWith('data:')) return u;
+    if (u.startsWith('/api/')) return API_BASE + u;
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith('/images/')) return API_BASE + u;
+    if (!isNaN(Number(u))) {
+      // legacy uploads table id
+      return `${API_BASE}/image/${u}`;
+    }
+    return null;
+  };
 
   // Show success message helper
   const showSuccess = (message) => {
@@ -100,23 +141,21 @@ export default function AdminProjects() {
     e.preventDefault();
     setAddLoading(true);
     setAddError(null);
-
     try {
       if (addImage && addImage.size > 100 * 1024 * 1024) {
         setAddError('Image is too big. Please upload an image less than 100 MB.');
         setAddLoading(false);
         return;
       }
+      // send multipart FormData directly to /api/projects so backend can store image
       const formData = new FormData();
       formData.append('name', addForm.name);
       formData.append('description', addForm.description);
       formData.append('region', addForm.region);
       formData.append('start_date', addForm.start_date);
       formData.append('end_date', addForm.end_date);
-      if (addImage) {
-        formData.append('image', addImage); // backend expects 'image' for image_url
-      }
-      await projectAPI.createProject(formData, true); // true = multipart
+      if (addImage) formData.append('image', addImage);
+      await projectAPI.createProject(formData, true);
       setShowAddModal(false);
       setAddForm({
         name: '',
@@ -143,7 +182,9 @@ export default function AdminProjects() {
       description: project.description,
       region: project.region,
       start_date: project.start_date ? project.start_date.slice(0, 10) : '',
-      end_date: project.end_date ? project.end_date.slice(0, 10) : ''
+      end_date: project.end_date ? project.end_date.slice(0, 10) : '',
+      image_url: project.image_url || '',
+      _imageSrc: project._imageSrc || null
     });
     setShowEditModal(true);
     setEditError(null);
@@ -163,23 +204,21 @@ export default function AdminProjects() {
     e.preventDefault();
     setEditLoading(true);
     setEditError(null);
-
     try {
       if (editImage && editImage.size > 100 * 1024 * 1024) {
         setEditError('Image is too big. Please upload an image less than 100 MB.');
         setEditLoading(false);
         return;
       }
+      // use FormData for updates when an image is included
       const formData = new FormData();
       formData.append('name', editForm.name);
       formData.append('description', editForm.description);
       formData.append('region', editForm.region);
       formData.append('start_date', editForm.start_date);
       formData.append('end_date', editForm.end_date);
-      if (editImage) {
-        formData.append('image', editImage); // backend expects 'image' for image_url
-      }
-      await projectAPI.updateProject(editForm.id, formData, true); // true = multipart
+      if (editImage) formData.append('image', editImage);
+      await projectAPI.updateProject(editForm.id, formData, !!editImage);
       setShowEditModal(false);
       setEditImage(null);
       showSuccess('Project updated successfully!');
@@ -243,25 +282,21 @@ export default function AdminProjects() {
   };
 
   return (
-  <div className="w-full max-w-screen-2xl mx-auto px-1 md:px-4 py-4 landscape:px-8 landscape:py-8 bg-transparent">
-  <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3 md:gap-0 pr-4 md:pr-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-navy drop-shadow-lg">Manage Projects</h2>
-        <div className="flex items-center space-x-4">
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            isSuperAdmin 
-              ? 'bg-green-100 text-green-800 border border-green-300' 
-              : 'bg-blue-100 text-blue-800 border border-blue-300'
-          }`}>
-            {isSuperAdmin ? 'Super Admin' : 'Admin'}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
+  <div className="w-full max-w-screen-2xl mx-auto px-1 md:px-4 py-4 landscape:px-8 landscape:py-8 flex flex-col items-center justify-center bg-transparent">
+    <div className="w-full flex flex-col items-center sm:items-start gap-4 sm:flex-row sm:justify-between mb-6">
+      <h2 className="text-3xl md:text-4xl font-bold text-black mb-2 text-center sm:text-left">Manage Projects</h2>
+      <div className="flex items-center gap-2 sm:gap-4 justify-center sm:justify-end">
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${isSuperAdmin ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
+          {isSuperAdmin ? 'Super Admin' : 'Admin'}
+        </span>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
+          Logout
+        </button>
       </div>
+    </div>
 
       {successMessage && (
         <div className="mb-4 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
@@ -284,7 +319,7 @@ export default function AdminProjects() {
       {/* Add Project Modal */}
       {showAddModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Add New Project</h3>
             <form onSubmit={handleAddSubmit}>
               {addError && (
@@ -307,13 +342,20 @@ export default function AdminProjects() {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  name="description"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={addForm.description}
-                  onChange={handleAddInput}
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onEditorChange={val => setAddForm(f => ({ ...f, description: val }))}
+                  init={{
+                    height: 420,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               
@@ -387,7 +429,7 @@ export default function AdminProjects() {
       {/* Edit Project Modal */}
       {showEditModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Edit Project</h3>
             <form onSubmit={handleEditSubmit}>
               {editError && (
@@ -410,13 +452,20 @@ export default function AdminProjects() {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  name="description"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={editForm.description}
-                  onChange={handleEditInput}
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onEditorChange={val => setEditForm(f => ({ ...f, description: val }))}
+                  init={{
+                    height: 420,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               
@@ -457,6 +506,16 @@ export default function AdminProjects() {
               
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image (Optional)</label>
+                {editForm.image_url && (
+                  <div className="mb-3 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Current Image:</p>
+                    <img
+                      src={editForm._imageSrc ? editForm._imageSrc : resolveProjectImageUrl(editForm)}
+                      alt="Current"
+                      className="h-32 w-32 object-cover rounded-lg border border-gray-300"
+                    />
+                  </div>
+                )}
                 <input
                   type="file"
                   name="image"
@@ -464,12 +523,13 @@ export default function AdminProjects() {
                   onChange={handleEditImage}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {editForm.image_url && (
-                  <div className="mt-2">
+                {editImage && (
+                  <div className="mt-3 p-4 bg-blue-50 border border-blue-300 rounded-lg">
+                    <p className="text-sm font-medium text-blue-600 mb-2">New Image Preview:</p>
                     <img
-                      src={editForm.image_url.startsWith('http') ? editForm.image_url : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${editForm.image_url.replace(/^.*[\\/]/, '')}`}
-                      alt="Current"
-                      className="h-12 w-12 object-cover rounded border"
+                      src={URL.createObjectURL(editImage)}
+                      alt="New"
+                      className="h-32 w-32 object-cover rounded-lg border border-blue-300"
                     />
                   </div>
                 )}
@@ -503,11 +563,10 @@ export default function AdminProjects() {
       )}
 
       {!loading && (
-        <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full mr-4 p-2 md:p-4">
-          <table className="min-w-full text-sm md:text-base">
+  <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full mr-4">
+          <table className="min-w-full text-sm md:text-base rounded-2xl overflow-hidden">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left font-semibold text-navy">ID</th>
                 <th className="py-3 px-4 text-left font-semibold text-navy">Name</th>
                 <th className="py-3 px-4 text-left font-semibold text-navy">Description</th>
                 <th className="py-3 px-4 text-left font-semibold text-navy">Region</th>
@@ -520,7 +579,7 @@ export default function AdminProjects() {
             <tbody className="divide-y divide-blue-100">
               {projects.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-8 px-4 text-center text-gray-500">
+                  <td colSpan="7" className="py-8 px-4 text-center text-gray-500">
                     <div className="text-lg">No projects found</div>
                     <div className="text-sm mt-1">Add your first project to get started!</div>
                   </td>
@@ -528,30 +587,24 @@ export default function AdminProjects() {
               ) : (
                 projects.map((project) => (
                   <tr key={project.id} className="hover:bg-blue-50 transition-colors">
-                    <td className="py-4 px-4 font-medium text-gray-900">{project.id}</td>
-                    <td className="py-4 px-4 font-medium text-gray-900">{project.name}</td>
-                    <td className="py-4 px-4 max-w-xs break-words" title={project.description}>{project.description}</td>
+                    <td className="py-4 px-4 font-medium text-gray-900">
+                      {project.name && project.name.length > 50 ? project.name.slice(0, 50) + '…' : project.name}
+                    </td>
+                    <td className="py-4 px-4 max-w-xs break-words" title={project.description}>
+                      <SafeRichText content={project.description && project.description.length > 50 ? project.description.slice(0, 50) + '…' : project.description} />
+                    </td>
                     <td className="py-4 px-4 text-gray-700">{project.region}</td>
-                    <td className="py-4 px-4 text-gray-700">{project.start_date ? project.start_date.split('T')[0] : ''}</td>
-                    <td className="py-4 px-4 text-gray-700">{project.end_date ? project.end_date.split('T')[0] : 'Ongoing'}</td>
+                    <td className="py-4 px-4 text-gray-700 whitespace-nowrap">{project.start_date ? project.start_date.split('T')[0] : ''}</td>
+                    <td className="py-4 px-4 text-gray-700 whitespace-nowrap">{project.end_date ? project.end_date.split('T')[0] : 'Ongoing'}</td>
                     <td className="py-4 px-4">
-                      {project.image_url ? (
+                      {resolveProjectImageUrl(project) ? (
                         <img 
-                          src={project.image_url} 
+                          src={resolveProjectImageUrl(project)}
                           alt="Project" 
                           className="h-12 w-12 object-cover rounded"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'inline';
-                          }}
                         />
                       ) : (
                         <span className="text-gray-400 text-sm">No image</span>
-                      )}
-                      {project.image_url && (
-                        <span className="text-gray-400 text-sm" style={{display: 'none'}}>
-                          Image not found
-                        </span>
                       )}
                     </td>
                     <td className="py-4 px-4">

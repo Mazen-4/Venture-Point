@@ -1,4 +1,74 @@
 import axios from 'axios';
+import api from '../apiReequest';
+// Authors API methods
+export const authorsAPI = {
+  // Get all authors
+  getAuthors: () => api.get('/authors'),
+
+  // Get single author
+  getAuthor: (id) => api.get(`/authors/${id}`),
+
+  // Create author (admin/superadmin)
+  createAuthor: (authorData) => api.post('/authors', authorData),
+
+  // Update author (admin/superadmin)
+  updateAuthor: (id, authorData) => api.put(`/authors/${id}`, authorData),
+
+  // Delete author (superadmin only)
+  deleteAuthor: (id) => api.delete(`/authors/${id}`)
+};
+// Member API methods
+// Partner API methods
+export const partnerAPI = {
+  // Get all partners
+  getPartners: () => api.get('/partners'),
+
+  // Create partner (superadmin only)
+  createPartner: (partnerData, isMultipart = false) => {
+    if (isMultipart) {
+      return api.post('/partners', partnerData);
+    }
+    return api.post('/partners', partnerData);
+  },
+
+  // Update partner (admin/superadmin)
+  updatePartner: (id, partnerData, isMultipart = false) => {
+    if (isMultipart) {
+      return api.put(`/partners/${id}`, partnerData);
+    }
+    return api.put(`/partners/${id}`, partnerData);
+  },
+
+  // Delete partner (superadmin only)
+  deletePartner: (id) => api.delete(`/partners/${id}`)
+
+};
+
+// Advisors API methods
+export const advisorsAPI = {
+  // Get all advisors
+  getAdvisors: () => api.get('/advisors'),
+
+  // Create advisor (superadmin only)
+  createAdvisor: (advisorData, isMultipart = false) => {
+    if (isMultipart) {
+      return api.post('/advisors', advisorData);
+    }
+    return api.post('/advisors', advisorData);
+  },
+
+  // Update advisor (admin/superadmin)
+  updateAdvisor: (id, advisorData, isMultipart = false) => {
+    if (isMultipart) {
+      return api.put(`/advisors/${id}`, advisorData);
+    }
+    return api.put(`/advisors/${id}`, advisorData);
+  },
+
+  // Delete advisor (superadmin only)
+  deleteAdvisor: (id) => api.delete(`/advisors/${id}`)
+};
+
 // Member API methods
 export const memberAPI = {
   // Get all members
@@ -7,9 +77,7 @@ export const memberAPI = {
   // Create member (superadmin only)
   createMember: (memberData, isMultipart = false) => {
     if (isMultipart) {
-      return api.post('/team', memberData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      return api.post('/team', memberData);
     }
     return api.post('/team', memberData);
   },
@@ -17,9 +85,7 @@ export const memberAPI = {
   // Update member (admin/superadmin)
   updateMember: (id, memberData, isMultipart = false) => {
   if (isMultipart) {
-    return api.put(`/team/${id}`, memberData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.put(`/team/${id}`, memberData);
   }
   return api.put(`/team/${id}`, memberData);
 },
@@ -86,7 +152,12 @@ export const articleAPI = {
   createArticle: (articleData) => api.post('/articles', articleData),
 
   // Update article
-  updateArticle: (id, articleData) => api.put(`/articles/${id}`, articleData),
+  updateArticle: (id, articleData, isMultipart = false) => {
+    if (isMultipart) {
+      return api.put(`/articles/${id}`, articleData);
+    }
+    return api.put(`/articles/${id}`, articleData);
+  },
 
   // Delete article (requires superadmin)
   deleteArticle: async (id) => {
@@ -118,9 +189,7 @@ export const eventAPI = {
   // Create event (supports multipart)
   createEvent: (eventData, isMultipart = false) => {
     if (isMultipart) {
-      return api.post('/events', eventData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      return api.post('/events', eventData);
     }
     return api.post('/events', eventData);
   },
@@ -128,7 +197,7 @@ export const eventAPI = {
   // Update event
   updateEvent: (id, eventData, isFormData = false) => {
     if (isFormData) {
-      return api.put(`/events/${id}`, eventData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      return api.put(`/events/${id}`, eventData);
     }
     return api.put(`/events/${id}`, eventData);
   },
@@ -185,46 +254,7 @@ export const serviceAPI = {
     }
   }
 };
-// Frontend: services/api.js
-
-// Create axios instance with base configuration
-const api = axios.create({
-  baseURL: (process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com') + '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor to add JWT token to every request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Add Bearer prefix to token
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Sending request with token:', token.substring(0, 20) + '...');
-    } else {
-      console.log('No token found in localStorage');
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor to handle token expiration
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-  window.location.href = '/admin/login';
-    }
-    return Promise.reject(error);
-  }
-);
+// Use shared axios instance from apiReequest.js (interceptors and defaults are configured there)
 
 // Project API methods
 export const projectAPI = {
@@ -234,45 +264,37 @@ export const projectAPI = {
   // Get single project
   getProject: (id) => api.get(`/projects/${id}`),
 
-  // Create project (supports multipart)
+  // Create project (supports multipart FormData when isMultipart=true)
   createProject: (projectData, isMultipart = false) => {
     if (isMultipart) {
-      return api.post('/projects', projectData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      return api.post('/projects', projectData);
     }
     return api.post('/projects', projectData);
   },
 
-  // Update project (supports multipart)
+  // Update project (supports multipart FormData when isMultipart=true)
   updateProject: (id, projectData, isMultipart = false) => {
     if (isMultipart) {
-      return api.put(`/projects/${id}`, projectData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      return api.put(`/projects/${id}`, projectData);
     }
     return api.put(`/projects/${id}`, projectData);
   },
-  
+
   // Delete project (requires superadmin)
   deleteProject: async (id) => {
     try {
       console.log(`Attempting to delete project ${id}`);
       const token = localStorage.getItem('token');
-      
       if (!token) {
         throw new Error('No authentication token found');
       }
-      
       // Decode token to check role (optional verification)
       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
       console.log('Token payload:', tokenPayload);
       console.log('User role:', tokenPayload.role);
-      
       if (tokenPayload.role !== 'superadmin' && tokenPayload.role !== 'admin') {
         throw new Error('Insufficient permissions. Admin or Superadmin role required.');
       }
-      
       const response = await api.delete(`/projects/${id}`);
       console.log('Delete successful:', response.data);
       return response;
@@ -315,7 +337,13 @@ export const authAPI = {
   register: (userData) => api.post('/admin/register', userData),
   logout: () => {
     localStorage.removeItem('token');
-  window.location.href = '/admin/login';
+    window.location.href = '/admin/login';
+  },
+
+  // Upload image to /upload endpoint
+  uploadImage: (formData) => {
+    // Always use the deployed backend URL for uploads
+    return axios.post('https://venturepoint-backend.onrender.com/upload', formData);
   },
   
   // Get current user info

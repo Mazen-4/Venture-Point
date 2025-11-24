@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import ReactDOM from 'react-dom';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { authAPI } from '../utils/authUtils';
-import { FaHome, FaUserShield, FaUsers, FaServicestack, FaProjectDiagram, FaCalendarAlt, FaNewspaper, FaEnvelope } from 'react-icons/fa';
+import { FaHome, FaUserShield, FaUsers, FaServicestack, FaProjectDiagram, FaCalendarAlt, FaNewspaper, FaEnvelope, FaBook } from 'react-icons/fa';
 
 // Sidebar navigation items
+import { FaHandshake } from 'react-icons/fa';
 const navItems = [
-  { name: 'Dashboard Home', path: '/admin', icon: <FaHome className="text-blue-700" /> },
-  { name: 'Admin Management', path: '/admin/admin-management', icon: <FaUserShield className="text-blue-700" /> },
-  { name: 'Members Management', path: '/admin/members', icon: <FaUsers className="text-blue-700" /> },
-  { name: 'Services', path: '/admin/services', icon: <FaServicestack className="text-blue-700" /> },
-  { name: 'Projects', path: '/admin/projects', icon: <FaProjectDiagram className="text-blue-700" /> },
-  { name: 'Events', path: '/admin/events', icon: <FaCalendarAlt className="text-blue-700" /> },
-  { name: 'Articles', path: '/admin/articles', icon: <FaNewspaper className="text-blue-700" /> },
-  { name: 'Contact Messages', path: '/admin/contact-messages', icon: <FaEnvelope className="text-blue-700" /> },
+  { name: 'Dashboard Home', path: '/admin', icon: <FaHome className="text-green-700 text-xl md:text-2xl" /> },
+  { name: 'Admin Management', path: '/admin/admin-management', icon: <FaUserShield className="text-green-700 text-xl md:text-2xl" /> },
+  { name: 'Members Management', path: '/admin/members', icon: <FaUsers className="text-green-700 text-xl md:text-2xl" /> },
+  { name: 'Partners Management', path: '/admin/partners', icon: <FaHandshake className="text-green-700 text-xl md:text-2xl" /> },
+  { name: 'Advisors Management', path: '/admin/advisors', icon: <FaUserShield className="text-green-700 text-xl md:text-2xl" /> },
+  { name: 'Authors Management', path: '/admin/authors', icon: <FaBook className="text-green-700 text-base md:text-lg" /> },
+  { name: 'Services', path: '/admin/services', icon: <FaServicestack className="text-green-700" /> },
+  { name: 'Projects', path: '/admin/projects', icon: <FaProjectDiagram className="text-green-700" /> },
+  { name: 'Events', path: '/admin/events', icon: <FaCalendarAlt className="text-green-700" /> },
+  { name: 'Articles', path: '/admin/articles', icon: <FaNewspaper className="text-green-700" /> },
+  { name: 'Contact Messages', path: '/admin/contact-messages', icon: <FaEnvelope className="text-green-700" /> },
 ];
 
 export default function AdminDashboard() {
@@ -38,6 +42,7 @@ export default function AdminDashboard() {
   // State for mobile sidebar drawer
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
+    {/* CSS moved into <style> tag below */}
   return (
     <>
       {/* Floating Contact Messages Button rendered via portal */}
@@ -50,40 +55,75 @@ export default function AdminDashboard() {
             aria-label="Contact Messages"
           >
             <FaEnvelope className="text-3xl animate-bounce" />
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full px-2 py-1 text-xs font-bold shadow-lg">
-              {unreadCount}
-            </span>
           </button>
         </div>,
         document.body
       )}
+      <div
+        className="w-full max-w-8xl rounded-lg sm:rounded-xl md:rounded-2xl shadow-xl p-2 sm:p-4 md:p-8 text-sm sm:text-base overflow-x-auto"
+        style={{
+          background: 'rgba(255, 255, 255, 0.65)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        }}
+      >
+        <div className="relative min-h-screen flex flex-col md:flex-row overflow-hidden p-2 md:p-4 w-full md:max-w-screen-2xl md:mx-auto min-w-0">
+        {/* Animated Gradient Background */}
+        <div className="absolute inset-0 z-0">
+          {/* ...existing code... */}
+          <style>{`
+            @keyframes gradientMove {
+              0% { background-position: 0% 0%; }
+              100% { background-position: 100% 100%; }
+            }
+            ${[...Array(12)].map((_, i) => `@keyframes floatParticle${i} {
+              0% { transform: translateY(0) scale(1); opacity: 0.4; }
+              25% { transform: translateY(-40px) scale(1.3); opacity: 0.6; }
+              50% { transform: translateY(-80px) scale(0.7); opacity: 0.3; }
+              75% { transform: translateY(-120px) scale(1.1); opacity: 0.5; }
+              100% { transform: translateY(-160px) scale(0); opacity: 0; }
+            }`).join('\n')}
+            .golden-frame {
+              position: relative;
+              border: 2px solid #C9A635;
+              transition: border-color 0.2s ease;
+            }
+            .golden-frame:hover {
+              border-color: #E6C55A;
+            }
+            .logout-button {
+              border: 2px solid #DC2626 !important;
+            }
+          `}</style>
+        </div>
 
-  <div className="flex min-h-screen bg-gradient-to-br from-blue-100 via-blue-300 to-blue-500 animate-fadein rounded-3xl landscape:flex-row flex-col">
+        {/* ...existing code... */}
         {/* Sidebar for desktop */}
-  <aside className="hidden md:flex flex-col w-72 bg-white/90 backdrop-blur-lg shadow-2xl p-8 rounded-3xl animate-slidein-left transition-all duration-700 border-2 border-blue-200 fixed h-full z-30 landscape:static landscape:relative">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-extrabold text-green-600 drop-shadow-lg tracking-wide animate-fadein">Admin Panel</h2>
-          </div>
-          <nav className="flex-1">
-            <ul className="space-y-2">
-              {navItems.map((item, idx) => (
-                <li key={item.name} className="animate-fadein" style={{ animationDelay: `${idx * 0.07}s` }}>
-                  <Link
-                    to={item.path}
-                    className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blue-200 hover:scale-105 text-blue-900 font-semibold transition-all duration-300 shadow-sm border border-blue-100"
-                  >
-                    {item.icon}
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <aside className="hidden md:flex flex-col min-w-72 w-72 max-w-72 bg-white/90 backdrop-blur-lg shadow-2xl p-4 rounded-3xl animate-slidein-left transition-all duration-700 border-2 border-blue-200 fixed h-[calc(97vh)] z-30 landscape:static landscape:relative top-6 left-2 md:top-8 md:left-3 overflow-hidden">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-center text-blue-700">Admin Panel</h2>
+            </div>
+            <nav className="flex-1 overflow-y-auto pr-2">
+              <ul className="space-y-3">
+                {navItems.map((item, idx) => (
+                  <li key={item.name} className="animate-fadein" style={{ animationDelay: `${idx * 0.07}s` }}>
+                    <Link
+                      to={item.path}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 text-green-900 font-semibold transition-all duration-300 golden-frame truncate"
+                    >
+                      {item.icon}
+                      <span className="truncate">{item.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           {/* Logout button at bottom of sidebar */}
-          <div className="mt-auto pt-6 border-t">
+          <div className="pt-4 border-t flex-shrink-0">
             <button
               onClick={handleLogout}
-              className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-red-300"
+              className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border-2 border-red-300 logout-button font-semibold"
             >
               Logout
             </button>
@@ -92,7 +132,7 @@ export default function AdminDashboard() {
 
         {/* Hamburger menu for mobile landscape */}
         <button
-          className="md:hidden fixed top-2 left-2 z-50 bg-white rounded-full p-3 shadow-xl border-2 border-blue-400 hover:scale-105 hover:shadow-emerald/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="md:hidden fixed top-4 left-4 z-50 bg-white rounded-full p-3 shadow-xl border-2 border-blue-400 hover:scale-105 hover:shadow-emerald/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
           onClick={() => setSidebarOpen(true)}
           aria-label="Open sidebar"
         >
@@ -113,37 +153,27 @@ export default function AdminDashboard() {
               aria-label="Close sidebar"
             />
             {/* Sidebar drawer */}
-            <aside className="w-72 bg-gray-900 text-white p-8 flex flex-col animate-slidein-left transition-all duration-700 rounded-3xl shadow-2xl border-2 border-blue-800 fixed top-0 left-0 h-full">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-extrabold text-emerald-300 drop-shadow-lg tracking-wide">Admin Panel</h2>
-                <button
-                  className="text-white text-2xl ml-2 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Close sidebar"
-                >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="6" y1="18" x2="18" y2="6" /></svg>
-                </button>
-              </div>
-              <nav className="flex-1">
-                <ul className="space-y-2">
+            <aside className="w-72 bg-gray-900 text-white p-4 flex flex-col animate-slidein-left transition-all duration-700 rounded-3xl shadow-2xl border-2 border-blue-800 fixed top-0 left-0 h-full overflow-hidden">
+              <nav className="flex-1 overflow-y-auto pr-2">
+                <ul className="space-y-3">
                   {navItems.map((item) => (
                     <li key={item.name}>
-                      <Link
-                        to={item.path}
-                        className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blue-800 hover:scale-105 text-white font-semibold transition-all duration-300 shadow-sm border border-blue-800"
-                        onClick={() => setSidebarOpen(false)}
-                      >
-                        {item.icon}
-                        {item.name}
-                      </Link>
-                    </li>
+                        <Link
+                          to={item.path}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-800 text-white font-semibold transition-all duration-300 golden-frame truncate"
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          {item.icon}
+                          <span className="truncate">{item.name}</span>
+                        </Link>
+                      </li>
                   ))}
                 </ul>
               </nav>
-              <div className="mt-auto pt-6 border-t border-blue-800">
+              <div className="pt-4 border-t border-blue-800 flex-shrink-0">
                 <button
                   onClick={() => { setSidebarOpen(false); handleLogout(); }}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-red-300"
+                  className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border-2 border-red-300 logout-button font-semibold"
                 >
                   Logout
                 </button>
@@ -153,12 +183,13 @@ export default function AdminDashboard() {
         )}
 
         {/* Main Content (changes with nested routes) */}
-        <main className="flex-1 p-4 md:p-10 transition-all duration-700 md:ml-72 landscape:p-8 landscape:ml-72 flex flex-col justify-center items-center" style={{marginLeft: 0}}>
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-2 md:p-8 min-h-[70vh] border-2 border-blue-200 w-full max-w-screen-2xl flex flex-col justify-center items-center" style={{marginLeft: 0}}>
+          <main className="flex-1 p-2 md:p-10 transition-all duration-700 md:ml-76 flex flex-col h-auto min-h-screen">
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-2 md:p-8 border-2 border-blue-200 w-full min-w-0 flex flex-col justify-start items-center overflow-auto mx-2 md:mx-8" style={{marginTop: 0}}>
             <Outlet />
           </div>
         </main>
-      </div>
+        </div>
+      </div> 
     </>
   );
 }

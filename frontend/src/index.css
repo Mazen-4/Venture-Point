@@ -9,6 +9,7 @@
 	- Animation: background-position for seamless movement
 	- To adjust colors or speed, edit the gradient stops and animation duration below
 */
+
 body {
 	min-height: 100vh;
 	background: transparent !important;
@@ -25,4 +26,127 @@ body {
 	100% {
 		background-position: 0% 50%;
 	}
+}
+
+/* Mobile / Tablet friendly tweaks
+	 - Non-invasive: only applied under breakpoints so desktop appearance stays the same
+	 - Improves image scaling, container padding, heading sizes and touch targets
+*/
+
+@media (max-width: 1024px) {
+	/* Make images scale down nicely in cards and hero sections */
+	img, picture, video, svg {
+		max-width: 100%;
+		height: auto;
+		display: block;
+	}
+
+	/* Ensure large content wrappers have comfortable padding on small screens */
+	.max-w-8xl, .max-w-6xl, .max-w-5xl {
+		padding-left: 1rem !important;
+		padding-right: 1rem !important;
+		box-sizing: border-box;
+	}
+
+	/* Improve touch target sizes for interactive elements */
+	button, a, .inline-flex {
+		-webkit-tap-highlight-color: rgba(0,0,0,0.05);
+		min-height: 44px;
+	}
+
+	/* Slightly reduce oversized gaps on tablet to avoid too much vertical scrolling */
+	.mb-24 { margin-bottom: 3rem !important; }
+	.py-20 { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+}
+
+@media (max-width: 640px) {
+	/* Headings scale down for narrow screens without touching desktop rules */
+	h1 { font-size: clamp(1.25rem, 6vw, 1.6rem) !important; }
+	h2 { font-size: clamp(1rem, 5.2vw, 1.25rem) !important; }
+	h3 { font-size: clamp(0.95rem, 4.8vw, 1.05rem) !important; }
+
+	/* Reduce large paddings that were intended for desktops */
+	.px-8 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+	.px-6 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+	.p-12 { padding: 0.75rem !important; }
+	.py-16 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+
+	/* Make hero/profile avatars fit better on phones */
+	.w-48, .h-48, .w-40, .h-40 { width: 10rem !important; height: 10rem !important; }
+
+	/* Improve readability and line length on small screens */
+	.text-lg { font-size: 1rem !important; }
+	.leading-relaxed { line-height: 1.45 !important; }
+
+	/* Prevent overflowing horizontal elements (tables, pre, code blocks) */
+	pre, code, table { max-width: 100%; overflow-x: auto; display: block; }
+}
+
+/* Additional precise breakpoints requested: 1024px, 768px, 576px */
+
+@media (max-width: 1024px) {
+	/* Make main container use full width on tablets */
+	main, .App, .container, .max-w-8xl, .max-w-6xl, .max-w-5xl {
+		width: 100% !important;
+		max-width: 100% !important;
+		padding-left: 1rem !important;
+		padding-right: 1rem !important;
+		box-sizing: border-box;
+	}
+
+	/* Ensure navbar items remain vertically centered on medium screens */
+	nav .flex.items-center.h-16, nav .flex.items-center {
+		align-items: center !important;
+	}
+
+	/* Prevent buttons being pushed down by baseline alignment */
+	nav .items-baseline {
+		align-items: center !important;
+	}
+}
+
+@media (max-width: 768px) {
+	/* Collapse long horizontal spacings and make nav full-width */
+	.ml-10 {
+		margin-left: 0 !important;
+	}
+	.space-x-8 > * + * {
+		margin-left: 0.75rem !important;
+	}
+
+	/* Make any side paddings smaller to use available width */
+	.px-8, .lg\:px-24, .md\:px-8 {
+		padding-left: 0.75rem !important;
+		padding-right: 0.75rem !important;
+	}
+
+	/* Improve hamburger hit area */
+		.xl\:hidden button, .mobile-menu-button {
+			min-width: 44px;
+			min-height: 44px;
+			padding: 0.5rem;
+		}
+}
+
+@media (max-width: 576px) {
+	/* Phones: make everything full width and stack where needed */
+	.flex.items-baseline, .flex.items-center, .flex.justify-between {
+		flex-wrap: wrap !important;
+	}
+
+	/* Reduce gaps and ensure buttons expand to full width in mobile menu */
+		.xl\:hidden .px-3, .xl\:hidden .px-4 {
+			padding-left: 0.75rem !important;
+			padding-right: 0.75rem !important;
+		}
+
+	/* Ensure images never overflow */
+	img, picture, video, svg {
+		max-width: 100% !important;
+		height: auto !important;
+	}
+
+	/* Improve text and button scaling */
+	.text-sm { font-size: 0.95rem !important; }
+	.text-base { font-size: 1rem !important; }
 }

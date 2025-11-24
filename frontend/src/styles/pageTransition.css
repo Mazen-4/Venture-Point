@@ -1,0 +1,60 @@
+/* Page Transition Styles - Book-like Slide Effect */
+
+.page-transition-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Add subtle shadow and perspective for book-like effect */
+.page-transition-wrapper::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Smooth page transitions with book-like appearance */
+html {
+  scroll-behavior: smooth;
+  perspective: 1000px;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Optional: Add a subtle shadow/overlay during transitions for book effect */
+@keyframes pageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+/* Ensures smooth transitions on all elements */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+

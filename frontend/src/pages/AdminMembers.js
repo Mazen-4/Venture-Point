@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import { authAPI, memberAPI } from '../utils/authUtils';
 import { useNavigate } from 'react-router-dom';
+import SafeRichText from '../components/SafeRichText';
+const API_BASE = process.env.REACT_APP_API_BASE_URL || 'https://venturepoint-backend.onrender.com';
+const TINYMCE_API_KEY = process.env.REACT_APP_TINYMCE_API_KEY; // Secure the API key
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
@@ -33,7 +37,9 @@ export default function AdminMembers() {
     setError(null);
     try {
       const response = await memberAPI.getMembers();
-      setMembers(response.data);
+  const data = response.data;
+  const withPhotos = await preloadMemberPhotos(data);
+  setMembers(withPhotos);
     } catch (err) {
       setError(err.message || 'Failed to fetch members');
     } finally {
@@ -44,6 +50,25 @@ export default function AdminMembers() {
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  // preload images for members that use API photo endpoint
+  const preloadMemberPhotos = async (membersList) => {
+    const updated = await Promise.all(membersList.map(async (m) => {
+      try {
+        if (m.photo_url && m.photo_url.startsWith('/api/')) {
+          const res = await fetch(`${API_BASE}${m.photo_url}`);
+          if (!res.ok) return m;
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          return { ...m, _photoSrc: url };
+        }
+      } catch (err) {
+        // ignore
+      }
+      return m;
+    }));
+    return updated;
+  };
 
   // Success message helper
   const showSuccess = (msg) => {
@@ -63,14 +88,13 @@ export default function AdminMembers() {
     setAddLoading(true);
     setAddError(null);
     try {
+      // Send multipart FormData directly to /api/team so backend saves to /images
       const formData = new FormData();
       formData.append('name', addForm.name);
       formData.append('role', addForm.role);
       formData.append('bio', addForm.bio);
-      if (addImage) {
-        formData.append('photo', addImage);
-      }
-      await memberAPI.createMember(formData, true); // true = multipart
+      if (addImage) formData.append('image', addImage);
+      await memberAPI.createMember(formData, true);
       setShowAddModal(false);
       setAddForm({ name: '', role: '', bio: '' });
       setAddImage(null);
@@ -101,23 +125,23 @@ export default function AdminMembers() {
     setEditLoading(true);
     setEditError(null);
     try {
+      // Use FormData upload to backend endpoint which handles saving to /images
       const formData = new FormData();
       formData.append('name', editForm.name);
       formData.append('role', editForm.role);
       formData.append('bio', editForm.bio);
-      if (editImage) {
-        formData.append('photo', editImage);
-      }
-      await memberAPI.updateMember(editForm.id, formData, true); // true = multipart
-      setShowEditModal(false);
+      if (editImage) formData.append('image', editImage);
+      await memberAPI.updateMember(editForm.id, formData, true);
       showSuccess('Member updated successfully!');
+      setShowEditModal(false);
       fetchMembers();
     } catch (err) {
-      setEditError(err.message || 'Failed to update member');
+      setEditError(err.message);
     } finally {
       setEditLoading(false);
     }
   };
+
 
   // Delete member
   const handleDeleteMember = async (memberId, memberName) => {
@@ -152,10 +176,10 @@ export default function AdminMembers() {
   const canDelete = isSuperAdmin;
 
   return (
-  <div className="w-full max-w-screen-2xl mx-auto px-1 md:px-4 py-4 mt-2 landscape:px-8 landscape:py-8">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 md:gap-0">
-        <h2 className="text-3xl md:text-4xl font-bold text-navy drop-shadow-lg">Members Management</h2>
-        <div className="flex items-center space-x-4">
+  <div className="w-full max-w-screen-2xl mx-auto px-1 md:px-4 py-4 mt-2 landscape:px-8 landscape:py-8 flex flex-col items-center justify-center">
+      <div className="w-full flex flex-col items-center sm:items-start gap-4 sm:flex-row sm:justify-between mb-6 md:gap-0">
+        <h2 className="text-3xl md:text-4xl font-bold text-black mb-2 text-center sm:text-left drop-shadow-lg">Members Management</h2>
+        <div className="flex items-center gap-2 sm:gap-4 justify-center sm:justify-end">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${isSuperAdmin ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>{isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'}</span>
           <button
             onClick={handleLogout}
@@ -189,7 +213,7 @@ export default function AdminMembers() {
 
       {showAddModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Add New Member</h3>
             <form onSubmit={handleAddSubmit}>
               <div className="mb-4">
@@ -216,13 +240,20 @@ export default function AdminMembers() {
               </div>
               <div className="mb-4">
                 <label className="block mb-2 font-medium text-gray-700">Bio</label>
-                <textarea
-                  name="bio"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={addForm.bio}
-                  onChange={handleAddInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  required
+                  onEditorChange={val => setAddForm(f => ({ ...f, bio: val }))}
+                  init={{
+                    height: 440,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               <div className="mb-4">
@@ -267,7 +298,7 @@ export default function AdminMembers() {
 
       {showEditModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Edit Member</h3>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
@@ -277,7 +308,7 @@ export default function AdminMembers() {
                   name="name"
                   value={editForm.name}
                   onChange={handleEditInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 px-3 py-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base min-h-[72px]"
                   required
                 />
               </div>
@@ -288,23 +319,44 @@ export default function AdminMembers() {
                   name="role"
                   value={editForm.role}
                   onChange={handleEditInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 px-3 py-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base min-h-[72px]"
                   required
                 />
               </div>
               <div className="mb-4">
                 <label className="block mb-2 font-medium text-gray-700">Bio</label>
-                <textarea
-                  name="bio"
+                <Editor
+                  apiKey={TINYMCE_API_KEY}
                   value={editForm.bio}
-                  onChange={handleEditInput}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  required
+                  onEditorChange={val => setEditForm(f => ({ ...f, bio: val }))}
+                   init={{
+                    height: 440,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+                    toolbar:
+                      'undo redo | formatselect | bold italic backcolor | \
+                      alignleft aligncenter alignright alignjustify | \
+                      bullist numlist outdent indent | removeformat | help'
+                  }}
                 />
               </div>
               <div className="mb-4">
                 <label className="block mb-2 font-medium text-gray-700">Photo</label>
+                {editForm.photo_url && (
+                  <div className="mb-3 p-4 bg-gray-50 border border-gray-300 rounded-lg">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Current Photo:</p>
+                    <img
+                      src={
+                        !isNaN(Number(editForm.photo_url))
+                          ? `${API_BASE}/image/${editForm.photo_url}`
+                          : (editForm.photo_url.startsWith('/') ? `${API_BASE}${editForm.photo_url}` : editForm.photo_url)
+                      }
+                      alt="Current"
+                      className="h-32 w-32 object-cover rounded-lg border border-gray-300"
+                    />
+                  </div>
+                )}
                 <input
                   type="file"
                   name="photo"
@@ -312,16 +364,13 @@ export default function AdminMembers() {
                   onChange={handleEditImage}
                   className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {editForm.photo_url && (
-                  <div className="mt-2">
+                {editImage && (
+                  <div className="mt-3 p-4 bg-blue-50 border border-blue-300 rounded-lg">
+                    <p className="text-sm font-medium text-blue-600 mb-2">New Photo Preview:</p>
                     <img
-                      src={
-                        editForm.photo_url.startsWith('/images/')
-                          ? `${process.env.REACT_APP_API_BASE_URL || "https://venturepoint-backend.onrender.com"}${editForm.photo_url}`
-                          : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${editForm.photo_url.replace(/^.*[\\/]/, '')}`
-                      }
-                      alt="Current"
-                      className="h-12 w-12 object-cover rounded-full border"
+                      src={URL.createObjectURL(editImage)}
+                      alt="New"
+                      className="h-32 w-32 object-cover rounded-lg border border-blue-300"
                     />
                   </div>
                 )}
@@ -363,11 +412,10 @@ export default function AdminMembers() {
       )}
 
       {!loading && (
-  <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full mr-4">
-          <table className="min-w-full text-sm md:text-base">
+  <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full mx-2 md:mx-8">
+          <table className="min-w-full text-sm md:text-base rounded-2xl overflow-hidden">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">ID</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Name</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Role</th>
                 <th className="py-3 px-4 text-left font-medium text-gray-700">Bio</th>
@@ -378,7 +426,7 @@ export default function AdminMembers() {
             <tbody className="divide-y divide-blue-100">
               {members.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-8 px-4 text-center text-gray-500">
+                  <td colSpan="5" className="py-8 px-4 text-center text-gray-500">
                     <div className="text-lg">No members found</div>
                     <div className="text-sm mt-1">Add your first member to get started!</div>
                   </td>
@@ -386,21 +434,32 @@ export default function AdminMembers() {
               ) : (
                 members.map((member) => (
                   <tr key={member.id} className="hover:bg-blue-50 transition-colors">
-                    <td className="py-4 px-4 font-medium text-gray-900">{member.id}</td>
-                    <td className="py-4 px-4 font-medium text-gray-900">{member.name}</td>
-                    <td className="py-4 px-4">{member.role}</td>
-                    <td className="py-4 px-4 max-w-xs truncate whitespace-pre-line break-words" title={member.bio}>{member.bio}</td>
+                    <td className="py-4 px-4 font-medium text-gray-900">
+                      {member.name && member.name.length > 50 ? member.name.slice(0, 50) + '…' : member.name}
+                    </td>
+                    <td className="py-4 px-4">
+                      {member.role && member.role.length > 50 ? member.role.slice(0, 50) + '…' : member.role}
+                    </td>
+                    <td className="py-4 px-4 max-w-xs truncate whitespace-pre-line break-words" title={member.bio}>
+                      <SafeRichText content={member.bio && member.bio.length > 50 ? member.bio.slice(0, 50) + '…' : member.bio} />
+                    </td>
                     <td className="py-4 px-4">
                       {member.photo_url ? (
-                        <img
-                          src={
-                            member.photo_url.startsWith('/images/')
-                              ? `${process.env.REACT_APP_API_BASE_URL || "https://venturepoint-backend.onrender.com"}${member.photo_url}`
-                              : `${process.env.REACT_APP_API_URL || "https://venturepoint-backend.onrender.com"}/images/${member.photo_url.replace(/^.*[\\/]/, '')}`
-                          }
-                          alt={member.name}
-                          className="h-12 w-12 object-cover rounded-full border"
-                        />
+                        (() => {
+                          const isNumeric = !isNaN(Number(member.photo_url));
+                          const src = member._photoSrc
+                            ? member._photoSrc
+                            : isNumeric
+                              ? `${API_BASE}/image/${member.photo_url}`
+                              : (member.photo_url.startsWith('/') ? `${API_BASE}${member.photo_url}` : member.photo_url);
+                          return (
+                            <img
+                              src={src}
+                              alt={member.name}
+                              className="h-12 w-12 object-cover rounded-full border"
+                            />
+                          );
+                        })()
                       ) : (
                         <span className="text-gray-400">No photo</span>
                       )}

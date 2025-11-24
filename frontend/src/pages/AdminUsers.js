@@ -143,10 +143,10 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="p-2 sm:p-4 md:p-8 w-full max-w-screen-2xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Admin Management</h2>
-        <div className="flex items-center gap-2 sm:gap-4">
+    <div className="p-2 sm:p-4 md:p-8 w-full max-w-screen-2xl mx-auto flex flex-col items-center sm:items-start justify-center sm:justify-start">
+      <div className="w-full flex flex-col items-center sm:items-start gap-4 sm:flex-row sm:justify-between mb-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-black mb-2 text-center sm:text-left">Admin Management</h2>
+        <div className="flex items-center gap-2 sm:gap-4 justify-center sm:justify-end">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${isSuperAdmin ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
             {isSuperAdmin ? 'Super Admin' : 'Admin'}
           </span>
@@ -171,16 +171,19 @@ export default function AdminUsers() {
         </div>
       )}
 
-      <button
-        className="mb-6 px-6 py-3 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 font-medium"
-        onClick={() => setShowAddModal(true)}
-      >
-        + Add New Admin
-      </button>
+      <div className="flex justify-center w-full">
+        <button
+          className="mb-6 px-6 py-3 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 font-medium"
+          style={{ width: 'auto', display: 'inline-block' }}
+          onClick={() => setShowAddModal(true)}
+        >
+          + Add New Admin
+        </button>
+      </div>
 
       {showAddModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Add New Admin</h3>
             <form onSubmit={handleAddSubmit}>
               <div className="mb-4">
@@ -226,7 +229,8 @@ export default function AdminUsers() {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors w-fit"
+                  style={{maxWidth: '140px'}}
                   onClick={() => {
                     setShowAddModal(false);
                     setAddError(null);
@@ -237,8 +241,8 @@ export default function AdminUsers() {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700"
-                  style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-fit"
+                  style={{maxWidth: '140px'}}
                   disabled={addLoading}
                 >
                   {addLoading ? 'Adding...' : 'Add Admin'}
@@ -251,7 +255,7 @@ export default function AdminUsers() {
 
       {showEditModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Edit Admin</h3>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
@@ -296,7 +300,8 @@ export default function AdminUsers() {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors w-fit"
+                  style={{maxWidth: '140px'}}
                   onClick={() => {
                     setShowEditModal(false);
                     setEditError(null);
@@ -307,8 +312,8 @@ export default function AdminUsers() {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 bg-green-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-green-700"
-                  style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors w-fit"
+                  style={{maxWidth: '140px'}}
                   disabled={editLoading}
                 >
                   {editLoading ? 'Updating...' : 'Update Admin'}
@@ -326,78 +331,79 @@ export default function AdminUsers() {
       )}
 
       {!loading && (
-        <div className="bg-white rounded-2xl shadow-2xl overflow-x-auto border-2 border-blue-200 w-full">
-          <table className="min-w-full text-base md:text-sm lg:text-base xl:text-lg">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">ID</th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">Username</th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">Role</th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-blue-100">
-              {admins.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 w-full -mx-2 sm:mx-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-max text-base md:text-sm lg:text-base xl:text-lg text-center sm:text-left rounded-2xl overflow-hidden"
+              style={{borderSpacing: 0, borderCollapse: 'separate'}}>
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="4" className="py-8 px-4 text-center text-gray-500">
-                    <div className="text-lg">No admins found</div>
-                    <div className="text-sm mt-1">Add your first admin to get started!</div>
-                  </td>
+                  <th className="py-3 px-4 font-medium text-gray-700 text-center sm:text-left">Username</th>
+                  <th className="py-3 px-4 font-medium text-gray-700 text-center sm:text-left">Role</th>
+                  <th className="py-3 px-4 font-medium text-gray-700 text-center sm:text-left first:rounded-tl-2xl last:rounded-tr-2xl" style={{width: '120px'}}>Actions</th>
                 </tr>
-              ) : (
-                admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-blue-50 transition-colors">
-                    <td className="py-4 px-4 font-medium text-gray-900">{admin.id}</td>
-                    <td className="py-4 px-4 font-medium text-gray-900">{admin.username}</td>
-                    <td className="py-4 px-4">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${admin.role === 'superadmin' ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
-                        {admin.role === 'superadmin' ? 'Super Admin' : 'Admin'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex flex-col gap-2 items-stretch justify-center">
-                        <button
-                          onClick={() => handleEditClick(admin)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 text-base md:text-sm lg:text-base xl:text-lg"
-                          style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
-                        >
-                          Edit
-                        </button>
-                        {admin.role !== 'superadmin' && (
-                          <button
-                            onClick={() => handlePromoteAdmin(admin.id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-green-700 text-base md:text-sm lg:text-base xl:text-lg"
-                            style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
-                          >
-                            Promote to Superadmin
-                          </button>
-                        )}
-                        {isSuperAdmin ? (
-                          <button
-                            onClick={() => handleDeleteAdmin(admin.id, admin.username)}
-                            disabled={deleteLoading === admin.id}
-                            className="px-3 py-1 bg-red-600 text-white rounded-xl hover:scale-105 shadow-lg disabled:opacity-50 transition-all duration-300 border border-red-700 text-base md:text-sm lg:text-base xl:text-lg"
-                            style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
-                          >
-                            {deleteLoading === admin.id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        ) : (
-                          <button
-                            disabled
-                            className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed text-base md:text-sm lg:text-base xl:text-lg"
-                            title="Superadmin role required to delete admins"
-                            style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-blue-100">
+                {admins.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="py-8 px-4 text-center sm:text-left text-gray-500">
+                      <div className="text-lg">No admins found</div>
+                      <div className="text-sm mt-1">Add your first admin to get started!</div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  admins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-blue-50 transition-colors text-center sm:text-left">
+                      <td className="py-4 px-4 font-medium text-gray-900 text-center sm:text-left">{admin.username}</td>
+                      <td className="py-4 px-4 text-center sm:text-left whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold break-words sm:break-normal ${admin.role === 'superadmin' ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-blue-100 text-blue-800 border border-blue-300'}`} style={{wordBreak: 'break-word', lineHeight: '1.2'}}>
+                          {admin.role === 'superadmin' ? 'Super Admin' : 'Admin'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-center sm:text-left" style={{width: '120px'}}>
+                        <div className="flex flex-col gap-2 items-center sm:items-stretch justify-center sm:justify-start">
+                          <button
+                            onClick={() => handleEditClick(admin)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-blue-700 text-base md:text-sm lg:text-base xl:text-lg"
+                            style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                          >
+                            Edit
+                          </button>
+                          {admin.role !== 'superadmin' && (
+                            <button
+                              onClick={() => handlePromoteAdmin(admin.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded-xl hover:scale-105 shadow-lg transition-all duration-300 border border-green-700 text-base md:text-sm lg:text-base xl:text-lg"
+                              style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                            >
+                              Promote to Superadmin
+                            </button>
+                          )}
+                          {isSuperAdmin ? (
+                            <button
+                              onClick={() => handleDeleteAdmin(admin.id, admin.username)}
+                              disabled={deleteLoading === admin.id}
+                              className="px-3 py-1 bg-red-600 text-white rounded-xl hover:scale-105 shadow-lg disabled:opacity-50 transition-all duration-300 border border-red-700 text-base md:text-sm lg:text-base xl:text-lg"
+                              style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                            >
+                              {deleteLoading === admin.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="px-3 py-1 bg-gray-400 text-white rounded-xl cursor-not-allowed text-base md:text-sm lg:text-base xl:text-lg"
+                              title="Superadmin role required to delete admins"
+                              style={{fontSize: 'clamp(0.95rem, 1vw + 0.8rem, 1.1rem)'}}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
